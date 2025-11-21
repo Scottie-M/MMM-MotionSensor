@@ -8,3 +8,5 @@ if sys.version_info < MIN_VERSION:
 
 import logger
 import motion
+
+# Added some comments
