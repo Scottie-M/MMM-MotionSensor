@@ -1,68 +1,81 @@
 Module.register("MMM-MotionSensor", {
-	// define variables used by module, but not in config data
-
-	// holder for config info from module_name.js
 	config:null,
-
-	// anything here in defaults will be added to the config data
-	// and replaced if the same thing is provided in config
+	motion:"",
 	defaults: {
-		message: "default message if none supplied in config.js"
+		message: "Nothing to see here.",
+		tvStatus: "TV State Unknown",
+		off_delay: 10 ,			//in Seconds
+		debounce_time: 2,
+		//displayName: "HDMI-1",
+		radar_pin: 4,
+		diagnostic: true,
+		debug: {level: "info"},
+
 	},
 
-	init: function(){
-		Log.log(this.name + " is in init!");
+	logToHelper(level, message) {
+		this.sendSocketNotification("LOG", { level, message });
+		console.log("MMM-MotionSensor:", message);
 	},
 
-	start: function(){
-		Log.log(this.name + " is starting!");
+	start(){
+		//this.logToHelper("info", this.name + " is starting!");
+		this.data.header = "Motion Sensor";
 	},
 
-	loaded: function(callback) {
-		Log.log(this.name + " is loaded!");
-		callback();
-	},
-
-	// return list of other functional scripts to use, if any (like require in node_helper)
 	getScripts() {
-	return	[]
+		return	[]
 	}, 
 
 	getStyles() {
 		return 	[]
 	},
 
-	// only called if the module header was configured in module config in config.js
 	getHeader() {
-		return this.data.header + " Foo Bar";
+		return this.data.header;
 	},
 
-	// messages received from other modules and the system (NOT from your node helper)
-	// payload is a notification dependent data structure
 	notificationReceived: function(notification, payload, sender) {
 		// once everybody is loaded up
 		if(notification==="ALL_MODULES_STARTED"){
-			// send our config to our node_helper
-			this.sendSocketNotification("CONFIG",this.config)
-		}
-		if (sender) {
-			Log.log(this.name + " received a module notification: " + notification + " from sender: " + sender.name);
+			this.logToHelper("debug", "In notification received, all modules started");
+
+			this.sendSocketNotification("CONFIG",this.config);
+			this.logToHelper("debug", "Sent a SOCKET notification: CONFIG");
+
+			this.sendSocketNotification("START_RADAR");
+			this.logToHelper("debug", "Sent a SOCKET notification: START_RADAR");
 		} else {
-			Log.log(this.name + " received a system notification: " + notification);
+			this.logToHelper("debug", "Notification received: " + notification);
 		}
 	},
 
-	// messages received from from your node helper (NOT other modules or the system)
-	// payload is a notification dependent data structure, up to you to design between module and node_helper
 	socketNotificationReceived: function(notification, payload) {
-		Log.log(this.name + " received a socket notification: " + notification + " - Payload: " + payload);
-		if(notification === "message_from_helper"){
-			this.config.message = payload;
-			// tell mirror runtime that our data has changed,
-			// we will be called back at GetDom() to provide the updated content
-			this.updateDom(1000)
+		switch (notification) {
+			case "MESSAGE":
+				this.logToHelper("debug", "Received a SOCKET notification: " + notification + " - Payload: " + payload);
+				this.config.message = payload;
+				this.updateDom();
+				break;
+			case "RADAR_EVENT":
+				const payloadObj = typeof payload === "object"
+                	? JSON.stringify(payload, null, 2) : payload;
+				this.logToHelper("debug","Received a SOCKET notification: " + notification + " - Payload: " + payloadObj);
+				if (payload.event.includes("Display")){
+					this.config.tvStatus = payload.event;
+					this.sendNotification ("TV_STATUS", { status: payload.event});
+					this.updateDom();
+				}
+				if (payload.event.includes("Motion") && this.config.diagnostic){
+					this.motion = payload.event;
+					this.updateDom();
+				}
+				//this.sendNotification ("TV_STATUS", { status: payload.event});
+				//this.updateDom();
+				break;
+			default:
+				//this.logToHelper("info","Unknown Socket Notification Received: " + notification);
 		}
-
 	},
 
 	// system notification your module is being hidden
@@ -75,21 +88,39 @@ Module.register("MMM-MotionSensor", {
 	resume(){
 	},
 
-	// this is the major worker of the module, it provides the displayable content for this module
 	getDom() {
 		var wrapper = document.createElement("div");
-		// if user supplied message text in its module config, use it
-		if(this.config.hasOwnProperty("message")){
-			// using text from module config block in config.js
-			wrapper.innerHTML = this.config.message;
-		}
-		else{
-		// use hard coded text
-			wrapper.innerHTML = "Hello world!";
+
+		var topLine = document.createElement("div");
+		if (this.config.diagnostic) {
+			topLine.style.color = "white";
 		}
 
-		// pass the created content back to MM to add to DOM.
-		return wrapper;
+		if (this.config.hasOwnProperty("message")) {
+			topLine.innerHTML = this.config.message;
+		} else {
+			topLine.innerHTML = "Hello world!";
+		}
+		wrapper.appendChild(topLine);
+
+		// Second line: tvStatus
+		if (this.config.hasOwnProperty("tvStatus")) {
+			var status = document.createElement("div");
+			if (this.config.diagnostic) {
+				status.style.color = "white";
+			}
+			status.innerHTML = this.config.tvStatus;
+			wrapper.appendChild(status);
+		}
+
+		// Bottom line: motion
+		if (this.config.diagnostic) {
+			var status = document.createElement("div");
+			status.style.color = "white";
+			status.innerHTML = this.motion;
+			wrapper.appendChild(status);
+		}
+    	return wrapper;
 	},
 
 })
