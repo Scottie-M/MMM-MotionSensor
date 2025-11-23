@@ -53,10 +53,26 @@ Having `position` set is useful for the initial set up but should be removed aft
 The Python code in this module is what interacts with the RCWL-0516 and turns the display on and off. It will try to auto detect the display server in use, X11 (Bullseye) or wayland (Bookworm / Trixie) and then try to detect the display output in use.<br><br>
 
 The correct command to turn the display on and off should then be used.<br>
+Typically for Wayland:
+```
+/usr/bin/wlr-randr --output HDMI-A-1 --off
+```
+And X11:
+```
+/usr/bin/xrandr -display :0 --output HDMI-1 --off
+```
+<br>
+The following outputs will used in this order of preferance if they are available:<br>
+
+`"HDMI", "DP", "DSI", "eDP", "DPI", "LVDS", "TV", "Composite", "CVBS", "VGA", "DVI"`
+<br><br>
+I will likely be adding support for multiple displays and manually overriding the display selection and command through the config options
 
 If you have issues with your display turning off and straight back on again, it is likely that the monitor is set to auto detect the input sorurce and has cycled through them and back the connected input. This will trigger the Raspberry Pi to reactivate the display. Disable auto select on the monitor to fix this.<br>
 
-All console output from MMM-MotionSensor.js, node_helper.js and the Python code are all directed to a log file created in the home directory in a folder called MotionSensor, this is also copied to the console that started MagicMirror
+All console output from `MMM-MotionSensor.js`, `node_helper.js` and the Python code are all directed to a log file created in the home directory in a folder called MotionSensor, this is also copied locally to the console that started MagicMirror.<br>
+<br>
+TODO - Test console output when using pm2, also test logging with pm2
 <br><br>
 Some detailed information about the RCWL-0516 and and the detection range adjustment can be found here:<br>
 [Last Minute Engineers](https://lastminuteengineers.com/rcwl0516-microwave-radar-motion-sensor-arduino-tutorial/)<br>
@@ -70,7 +86,7 @@ GND - To a Ground pin on the Raspberry Pi<br>
 OUT - To the GPIO pin you want to use (Default is 4)<br>
 VIN - To a 5V supply pin on the Raspberry Pi<br>
 <br>
-I soldered a 90 degree header on this and used Dupont jumper wires to connect.<br>
+I soldered a 90 degree header on this and used Dupont jumper wires to connect.<br><br>
 
 <img src="https://github.com/user-attachments/assets/80c9eb22-da5d-431f-bf85-09dd351db8c3" alt="RCWL-0516" width="500"> <br>
 <br>
