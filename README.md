@@ -10,7 +10,6 @@ This will need some soldering skill! I used an smd 500k trimmer pot, soldering o
 
 If this seems daunting then a PIR mounted externally and one of the many PIR modules may be a better option. if not... details below!
 
-MMM
 
 **To install:**
 ```bash
@@ -67,6 +66,12 @@ To reduce the detection range connected a [500k Trimmer pot](https://uk.rs-onlin
 I soldered the jumper wire to the trimmer pad first, then lined it and the other pad up with the pads on the board and applied the soldering iron very quickly to both. A little bit of glue at the side of the trimmer pot will help keep it stable when adjusting the resistance.
 
 <br><br>
+GND - To a Ground pin on the Raspberry Pi<br>
+OUT - To the GPIO pin you want to use (Default is 4)<br>
+VIN - To a 5V supply pin on the Raspberry Pi<br>
+<br>
+I soldered a 90 degree header on this and used Dupont jumper wires to connect.<br>
+
 <img src="https://github.com/user-attachments/assets/80c9eb22-da5d-431f-bf85-09dd351db8c3" alt="RCWL-0516" width="500"> <br>
 <br>
 
