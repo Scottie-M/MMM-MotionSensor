@@ -20,14 +20,14 @@ cd modules
 git clone https://github.com/Scottie-M/MMM-MotionSensor.git
 ```
 <br><br>
-This is a sample config the module:
+This is a sample config for the module:
 ```js
 {
   module: "MMM-MotionSensor",
   header: "Motion Sensor",
   position: "bottom_left",
   config: {
-    off_delay: 10 ,			// in seconds
+    off_delay: 30 ,			// in seconds
     debounce_time: 2, 		// in seconds
     radar_pin: 4,				// GPIO pin used for the sensor
     debug: {level: "info"},
@@ -37,7 +37,7 @@ This is a sample config the module:
 ```
 <br>
 
-Having `position` set is useful for the initial set up but should  be removed afterwards, it is just an indicator that shows the TV state. If `diagnostic` is true it also shows whether or not motion is detected.
+Having `position` set is useful for the initial set up but should be removed afterwards, it is just an indicator that shows the TV state. If `diagnostic` is true it also shows whether or not motion is detected to allow adjustment of the detection range.
 
 <br><br>
 
@@ -48,7 +48,7 @@ Having `position` set is useful for the initial set up but should  be removed af
 | `debounce_time`| To prevent repeated triggers, 2 seconds is about right!<br>Default: `2`  |
 | `radar_pin`| This is the GPIO pin that `out` on the RCWL-0516 is connected to<br>Default: `4` | 
 | `debug`| The level of log information sent to the console and log file.<br>Default: `"info"`<br>This needs to be in the format `{level:"LOG LEVEL"}`<br>Log levels can be: `"debug", "info" "warning", "error", "critical"`|
-| `diagnostic`| This is a diagnostic mode that keeps the display turned on but displays a message when motion is detected and when it stops.<br>This is useful for setting up the RCWL-0516 and adjusting the trimmer to set the detection distance.<br>Default: `false`|
+| `diagnostic`| This is a diagnostic mode that keeps the display turned on. A message is displayed when motion is detected and when it stops.<br>This is useful for setting up the RCWL-0516 and adjusting the trimmer to set the detection distance.<br>Default: `false`|
 <br>
 <br>
 The Python code in this module is what interacts with the RCWL-0516 and turns the display on and off. It will try to auto detect the display server in use, X11 (Bullseye) or wayland (Bookworm / Trixie) and then try to detect the display output in use.<br><br>
