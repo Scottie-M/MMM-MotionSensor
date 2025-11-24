@@ -78,15 +78,15 @@ Some detailed information about the RCWL-0516 and and the detection range adjust
 [Last Minute Engineers](https://lastminuteengineers.com/rcwl0516-microwave-radar-motion-sensor-arduino-tutorial/)<br>
 [Wolles Elektronikkiste](https://wolles-elektronikkiste.de/en/rcwl-0516-microwave-radar-motion-detector)<br>
 <br>
-To reduce the detection range connected a [500k Trimmer pot](https://uk.rs-online.com/web/p/trimmer-potentiometers/1001234) to the range adjustment jumper. In this case it may be best to avoid SMD hot air rework soldering and just use a fine point on a soldering iron. Keep this below 230 deegrees celcius and be quick, otherwise the heat may destroy the IC on the other side. A good low temp lead solder or SMD solder paste is best.<br>
-I soldered the jumper wire to the trimmer pad first, then lined it and the other pad up with the pads on the board and applied the soldering iron very quickly to both. A little bit of glue at the side of the trimmer pot will help keep it stable when adjusting the resistance.
+To reduce the detection range connect a [500k Trimmer pot](https://uk.rs-online.com/web/p/trimmer-potentiometers/1001234) to the range adjustment jumper. In this case it may be best to avoid SMD hot air rework soldering and just use a fine point on a soldering iron. Keep this below 230 deegrees celcius and be quick, otherwise the heat may destroy the IC on the other side. A good low temp lead solder or SMD solder paste is best.<br>
+I soldered the jumper wire to the trimmer pots pad first, then lined up the other trimmer pot pad and the jumper wire with the pads on the board and applied the soldering iron very quickly to both. A little bit of glue at the side of the trimmer pot will help keep it stable when adjusting the resistance.
 
 <br><br>
 GND - To a Ground pin on the Raspberry Pi<br>
 OUT - To the GPIO pin you want to use (Default is 4)<br>
 VIN - To a 5V supply pin on the Raspberry Pi<br>
 <br>
-I soldered a 90 degree header on this and used Dupont jumper wires to connect.<br><br>
+I soldered a 90 degree header on this and used Dupont jumper wires to connect to the Raspberry Pi.<br><br>
 
 <img src="https://github.com/user-attachments/assets/80c9eb22-da5d-431f-bf85-09dd351db8c3" alt="RCWL-0516" width="500"> <br>
 <br>
