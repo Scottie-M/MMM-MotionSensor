@@ -70,7 +70,7 @@ I will likely be adding support for multiple displays and manually overriding th
 
 If you have issues with your display turning off and straight back on again, it is likely that the monitor is set to auto detect the input sorurce and has cycled through them and back the connected input. This will trigger the Raspberry Pi to reactivate the display. Disable auto select on the monitor to fix this.<br>
 
-If you start MagicMirror with `npm start` from a terminal window then all console output from `MMM-MotionSensor.js`, `node_helper.js` and the Python code can be seen in the console output in the terminal window. This is also written to a log file created in the home directory in a folder  ~/log/MotionSensor. If you use pm2 to start then you can just see the output in the log file that is generated.<br>
+If you start MagicMirror with `npm start` from a terminal window then all console output from `MMM-MotionSensor.js`, `node_helper.js` and the Python code can be seen in the console output in the terminal window. This is also written to a log file created in the home directory in a folder  `~/log/MotionSensor`. If you use pm2 to start then you can just see the output in the log file that is generated.<br>
 <br><br>
 Some detailed information about the RCWL-0516 and and the detection range adjustment can be found here:<br>
 [Last Minute Engineers](https://lastminuteengineers.com/rcwl0516-microwave-radar-motion-sensor-arduino-tutorial/)<br>
