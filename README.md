@@ -1,6 +1,6 @@
 # MMM-MotionSensor
 
-### This is a module for Magic Mirror that uses the RCWL_0516 Microwave Radar Motion Sensor to turn the connected display on and off when a person approaches. 
+### This is a module for Magic Mirror that uses the RCWL-0516 Microwave Radar Motion Sensor to turn the connected display on and off when a person approaches. 
 
 I realised after building and testing my mirror that the PIR I was using wasn't going to work behind the acrylic so this was my solution.
 
