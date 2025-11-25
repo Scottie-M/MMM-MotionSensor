@@ -4,11 +4,11 @@ Module.register("MMM-MotionSensor", {
 	defaults: {
 		message: "Nothing to see here.",
 		tvStatus: "TV State Unknown",
-		off_delay: 10 ,			//in Seconds
+		off_delay: 30 ,			//in Seconds
 		debounce_time: 2,
 		//displayName: "HDMI-1",
 		radar_pin: 4,
-		diagnostic: true,
+		diagnostic: false,
 		debug: {level: "info"},
 
 	},
@@ -70,21 +70,15 @@ Module.register("MMM-MotionSensor", {
 					this.motion = payload.event;
 					this.updateDom();
 				}
-				//this.sendNotification ("TV_STATUS", { status: payload.event});
-				//this.updateDom();
 				break;
 			default:
-				//this.logToHelper("info","Unknown Socket Notification Received: " + notification);
+				this.logToHelper("info","Unknown Socket Notification Received: " + notification);
 		}
 	},
 
-	// system notification your module is being hidden
-	// typically you would stop doing UI updates (getDom/updateDom) if the module is hidden
 	suspend(){
 	},
 
-	// system notification your module is being unhidden/shown
-	// typically you would resume doing UI updates (getDom/updateDom) if the module is shown
 	resume(){
 	},
 
