@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Pi5 Version
+
 import time, sys, json
 from signal import pause
 from gpiozero import DigitalInputDevice
@@ -10,9 +10,9 @@ from logger import logger, configure_logger
 # --------------------------------------------------
 DEFAULT_CONFIG = {
 	"radar_pin": 4,
-	"off_delay": 5,
+	"off_delay": 30,
 	"debounce_time": 2,
-	"log_level": "debug",
+	"log_level": "info",
 	"diagnostic": False
 }
 
