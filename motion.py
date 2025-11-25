@@ -16,7 +16,6 @@ DEFAULT_CONFIG = {
 	"diagnostic": False
 }
 
-
 def load_config():
 	# Load configuration from JSON passed as sys.argv[1].
 	# Falls back to defaults if missing or invalid.
@@ -41,7 +40,6 @@ def load_config():
 
 	logger.info(f"Loaded configuration: {config}")
 	return config
-
 
 def motion_control():
 	config = load_config()
@@ -103,6 +101,5 @@ def motion_control():
 	except KeyboardInterrupt:
 		logger.info("Shutting down...")
 		display.set_display(True)  # Leave display ON on exit
-
 
 motion_control()
