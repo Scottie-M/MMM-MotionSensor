@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Pi5 Version
+
 import time, sys, json
 from signal import pause
 from gpiozero import DigitalInputDevice
@@ -10,12 +10,11 @@ from logger import logger, configure_logger
 # --------------------------------------------------
 DEFAULT_CONFIG = {
 	"radar_pin": 4,
-	"off_delay": 5,
+	"off_delay": 30,
 	"debounce_time": 2,
-	"log_level": "debug",
+	"log_level": "info",
 	"diagnostic": False
 }
-
 
 def load_config():
 	# Load configuration from JSON passed as sys.argv[1].
@@ -41,7 +40,6 @@ def load_config():
 
 	logger.info(f"Loaded configuration: {config}")
 	return config
-
 
 def motion_control():
 	config = load_config()
@@ -103,6 +101,5 @@ def motion_control():
 	except KeyboardInterrupt:
 		logger.info("Shutting down...")
 		display.set_display(True)  # Leave display ON on exit
-
 
 motion_control()

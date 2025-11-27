@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Pi5 Version
+
 import re
 import subprocess
 import json
@@ -7,7 +7,6 @@ import threading
 import time
 import sys
 from logger import logger
-
 
 # Supported output types (DRM/KMS standard naming)
 OUTPUT_REGEX = r"^(HDMI|DP|DVI|VGA|DSI|DPI|LVDS|TV|Composite|CVBS|eDP)[A-Za-z0-9\-]*$"
@@ -31,7 +30,7 @@ class DisplayController:
 	def emit_event(self, event_type, message):
 		payload = {"type": "event", "event": event_type, "message": message}
 		print(json.dumps(payload), flush=True)
-	
+
 	# Detect whether we are using Wayland or X11
 	#-------------------------------------------
 	def detect_display_server(self):
@@ -61,7 +60,6 @@ class DisplayController:
 			logger.error(f"Failed detecting display server: {e}")
 			return "unknown"
 
-
 	# Select the "best" output based on ranking
 	#------------------------------------------
 	def select_best_output(self, displays):
@@ -70,7 +68,6 @@ class DisplayController:
 				if d["name"].startswith(prefix):
 					return d["name"]
 		return displays[0]["name"]
-
 
 	# Parse Wayland (wlroots) display names
 	#--------------------------------------
@@ -100,7 +97,6 @@ class DisplayController:
 			logger.error(f"Wayland parsing error: {e}")
 			return []
 
-
 	# Find X11 display number (:0, :0.0 etc)
 	#-----------------------------------
 	def find_x11_display_number(self):
@@ -114,7 +110,6 @@ class DisplayController:
 			return None
 		except Exception:
 			return None
-
 
 	# Parse xrandr display names
 	#---------------------------
@@ -143,7 +138,6 @@ class DisplayController:
 		except Exception as e:
 			logger.error(f"X11 parse error: {e}")
 			return []
-
 
 	# Build immutable base command for Wayland or X11
 	#------------------------------------------------
@@ -180,7 +174,6 @@ class DisplayController:
 		logger.error("Unknown display server type.")
 		sys.exit(99)
 
-
 	# Turn display on/off (thread-safe)
 	#----------------------------------
 	def set_display(self, on: bool):
@@ -203,7 +196,7 @@ class DisplayController:
 					subprocess.run(cmd, check=True, capture_output=True, text=True)
 				else:
 					logger.debug(f"Diagnostic mode. NOT running command: {cmd}")
-				
+
 			except subprocess.CalledProcessError as e:
 				logger.error(f"Display command failed: {e.stderr.strip()}")
 				return
@@ -229,7 +222,6 @@ class MotionHandler:
 		self.radar.when_activated = self.motion_start
 		self.radar.when_deactivated = self.motion_end
 
-
 	def motion_start(self):
 		now = time.time()
 		if now - self.last_trigger < self.debounce:
@@ -246,7 +238,6 @@ class MotionHandler:
 
 			self.display.set_display(True)
 
-
 	def motion_end(self):
 		logger.debug("Motion stopped")
 		if self.diagnostic:
@@ -259,8 +250,6 @@ class MotionHandler:
 			self.timer = threading.Timer(self.off_delay, self.display_off)
 			self.timer.start()
 
-
 	def display_off(self):
 		logger.debug("Auto turning OFF display")
 		self.display.set_display(False)
-

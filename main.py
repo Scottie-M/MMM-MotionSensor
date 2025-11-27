@@ -1,5 +1,5 @@
 # main.py
-# Pi5 Version
+
 import sys
 
 MIN_VERSION = (3, 7)
