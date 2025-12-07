@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import time, sys, json
+import time, sys, json, threading
 from signal import pause
 from gpiozero import DigitalInputDevice
 from display_controller import DisplayController, MotionHandler
@@ -40,6 +40,21 @@ def load_config():
 
 	logger.info(f"Loaded configuration: {config}")
 	return config
+
+def listen_for_commands():
+    for line in sys.stdin:
+        try:
+            msg = json.loads(line.strip())
+            if msg.get("type") == "command":
+                action = msg.get("action")
+                if action == "DISPLAY_ON":
+                    logger.info("Received command from Node: DISPLAY_ON")
+                    #turn_display_on()
+                elif action == "DISPLAY_OFF":
+                    logger.info("Received command from Node: DISPLAY_OFF")
+                    #turn_display_off()
+        except Exception as e:
+            logger.error(f"Command parse error: {e}")
 
 def motion_control():
 	config = load_config()
@@ -94,6 +109,9 @@ def motion_control():
 
 	logger.info("System Ready. Monitoring motion...")
 
+	# Start listener for commands from the node_helper
+	threading.Thread(target=listen_for_commands, daemon=True).start()
+
 	# Run until user exits
 	# --------------------
 	try:
@@ -103,3 +121,5 @@ def motion_control():
 		display.set_display(True)  # Leave display ON on exit
 
 motion_control()
+
+
