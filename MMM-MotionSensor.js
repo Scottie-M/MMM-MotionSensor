@@ -56,14 +56,19 @@ Module.register("MMM-MotionSensor", {
 				break;
 			case "DISPLAY_ON":
 				this.messageToRadar("command","DISPLAY_ON");
+				break;
 			case "DISPLAY_OFF":
 				this.messageToRadar("command","DISPLAY_OFF");
+				break;
 			case "DISPLAY_TOGGLE":
 				this.messageToRadar("command","DISPLAY_TOGGLE");
+				break;
 			case "DISABLE_RADAR": // TODO - Not implimented yet
 				this.messageToRadar("command","DISABLE_RADAR");
+				break;
 			case "ENABLE_RADAR": // TODO - Not implimented yet
 				this.messageToRadar("command","ENABLE_RADAR");
+				break;
 			default:
 				//this.logToHelper("info", "Notification received: " + notification);
 			}
