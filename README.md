@@ -91,6 +91,15 @@ I soldered a 90 degree header on this and used Dupont jumper wires to connect to
 
 
 <img width="800"  alt="ScreenShot 1" src="https://github.com/user-attachments/assets/042b5c77-8ea0-49d8-bdd3-6d7e31ca1b57" />
+<br><br>
+
+Broadacast messages accepted from other modules:<br>
+
+| Message           | Description |
+|------------------|----------------|
+| `DISPLAY_ON`| Turn the display on, setting the off delay specified in the config|
+| `DISPLAY_OFF`| Turn the display off and wait for the motion sensor to trigger|
+| `DISPLAY_TOGGLE`| Toggle the state of the display with details as per the ON/OFF messages above| 
 
 
 
