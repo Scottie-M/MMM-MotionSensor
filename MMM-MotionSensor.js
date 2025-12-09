@@ -10,6 +10,7 @@ Module.register("MMM-MotionSensor", {
 		radar_pin: 4,
 		diagnostic: false,
 		debug: {level: "info"},
+		dev: false,
 
 	},
 
@@ -18,6 +19,13 @@ Module.register("MMM-MotionSensor", {
 		console.log("MMM-MotionSensor:", message);
 	},
 
+	// Send a message to the running motion sensor Python process 
+	messageToRadar(commandType, radarAction) {
+		this.sendSocketNotification("RADAR_COMMAND", (JSON.stringify({
+						type: commandType,
+						action: radarAction
+					}) + "\n"));
+	},
 	start(){
 		//this.logToHelper("info", this.name + " is starting!");
 		this.data.header = "Motion Sensor";
@@ -37,17 +45,28 @@ Module.register("MMM-MotionSensor", {
 
 	notificationReceived: function(notification, payload, sender) {
 		// once everybody is loaded up
-		if(notification==="ALL_MODULES_STARTED"){
-			this.logToHelper("debug", "In notification received, all modules started");
+		switch (notification) {
+			case "ALL_MODULES_STARTED":
+				this.logToHelper("debug", "In notification received, all modules started");
+				this.sendSocketNotification("CONFIG",this.config);
+				this.logToHelper("debug", "Sent a SOCKET notification: CONFIG");
 
-			this.sendSocketNotification("CONFIG",this.config);
-			this.logToHelper("debug", "Sent a SOCKET notification: CONFIG");
-
-			this.sendSocketNotification("START_RADAR");
-			this.logToHelper("debug", "Sent a SOCKET notification: START_RADAR");
-		} else {
-			this.logToHelper("debug", "Notification received: " + notification);
-		}
+				this.sendSocketNotification("START_RADAR");
+				this.logToHelper("debug", "Sent a SOCKET notification: START_RADAR");
+				break;
+			case "DISPLAY_ON":
+				this.messageToRadar("command","DISPLAY_ON");
+			case "DISPLAY_OFF":
+				this.messageToRadar("command","DISPLAY_OFF");
+			case "DISPLAY_TOGGLE":
+				this.messageToRadar("command","DISPLAY_TOGGLE");
+			case "DISABLE_RADAR": // TODO - Not implimented yet
+				this.messageToRadar("command","DISABLE_RADAR");
+			case "ENABLE_RADAR": // TODO - Not implimented yet
+				this.messageToRadar("command","ENABLE_RADAR");
+			default:
+				//this.logToHelper("info", "Notification received: " + notification);
+			}
 	},
 
 	socketNotificationReceived: function(notification, payload) {
@@ -70,22 +89,11 @@ Module.register("MMM-MotionSensor", {
 					this.motion = payload.event;
 					this.updateDom();
 				}
-				//this.sendNotification ("TV_STATUS", { status: payload.event});
-				//this.updateDom();
+
 				break;
 			default:
-				//this.logToHelper("info","Unknown Socket Notification Received: " + notification);
+				this.logToHelper("info","Unknown Socket Notification Received: " + notification);
 		}
-	},
-
-	// system notification your module is being hidden
-	// typically you would stop doing UI updates (getDom/updateDom) if the module is hidden
-	suspend(){
-	},
-
-	// system notification your module is being unhidden/shown
-	// typically you would resume doing UI updates (getDom/updateDom) if the module is shown
-	resume(){
 	},
 
 	getDom() {

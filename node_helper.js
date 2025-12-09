@@ -38,7 +38,8 @@ module.exports = NodeHelper.create({
 			radar_pin: this.config.radar_pin,
 			debounce_time: this.config.debounce_time,
 			log_level: this.config.debug.level?.toLowerCase() || "info",
-			diagnostic: this.config.diagnostic
+			diagnostic: this.config.diagnostic,
+			dev: this.config.dev
 		};
 		const jsonArg = JSON.stringify(configPayload);
 		const py = spawn("python3", ["-u", this.path + "/main.py", jsonArg]);
@@ -103,7 +104,6 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-
 	socketNotificationReceived(notification, payload) {
 		switch (notification) {
 			case "CONFIG":
@@ -122,6 +122,18 @@ module.exports = NodeHelper.create({
 				}
 				
 				this.startPython();
+				break;
+			case "RADAR_COMMAND":
+				if (this.pythonProcess && !this.pythonProcess.killed) {
+					this.pythonProcess.stdin.write(payload);
+				}
+
+				//if (this.pythonProcess && !this.pythonProcess.killed) {
+				//	this.pythonProcess.stdin.write(JSON.stringify({
+				//		type: "command",
+				//		action: "DISPLAY_ON"
+				//	}) + "\n");
+				//}
 				break;
 			case "LOG":
 				this.loggerMMM[payload.level]

@@ -10,11 +10,13 @@ from logger import logger, configure_logger
 # --------------------------------------------------
 DEFAULT_CONFIG = {
 	"radar_pin": 4,
-	"off_delay": 30,
+	"off_delay": 5,
 	"debounce_time": 2,
-	"log_level": "info",
-	"diagnostic": False
+	"log_level": "debug",
+	"diagnostic": False,
+	"dev" : False
 }
+
 
 def load_config():
 	# Load configuration from JSON passed as sys.argv[1].
@@ -32,6 +34,7 @@ def load_config():
 					"debounce_time": incoming.get("debounce_time", config["debounce_time"]),
 					"log_level": incoming.get("log_level", config["log_level"]),
 					"diagnostic": incoming.get("diagnostic", config["diagnostic"]),
+					"dev": incoming.get("dev", config["dev"])
 				})
 			else:
 				logger.error("JSON argument is not a valid object.")
@@ -41,20 +44,33 @@ def load_config():
 	logger.info(f"Loaded configuration: {config}")
 	return config
 
-def listen_for_commands():
-    for line in sys.stdin:
-        try:
-            msg = json.loads(line.strip())
-            if msg.get("type") == "command":
-                action = msg.get("action")
-                if action == "DISPLAY_ON":
-                    logger.info("Received command from Node: DISPLAY_ON")
-                    #turn_display_on()
-                elif action == "DISPLAY_OFF":
-                    logger.info("Received command from Node: DISPLAY_OFF")
-                    #turn_display_off()
-        except Exception as e:
-            logger.error(f"Command parse error: {e}")
+def listen_for_commands(motion, display, radar):
+	logger.info("In Listen for commands")
+	for line in sys.stdin:
+		try:
+			msg = json.loads(line.strip())
+			if msg.get("type") == "command":
+				action = msg.get("action")
+				if action == "DISPLAY_ON":
+					logger.info("Received command from Node: DISPLAY_ON")
+					motion.motion_start()
+				elif action == "DISPLAY_OFF":
+					logger.info("Received command from Node: DISPLAY_OFF")
+					motion.motion_end(True)
+				elif action == "DISPLAY_TOGGLE":
+					logger.info("Received command from Node: DISPLAY_TOGGLE")
+					if display.display_is_on:
+						motion.motion_end(True)
+					else:
+						motion.motion_start()
+				elif action == "DISABLE_RADAR":
+					logger.info("TODO Received command from Node: DISABLE_RADAR")
+					#TODO
+				elif action == "ENABLE_RADAR":
+					logger.info("TODO Received command from Node: ENABLE_RADAR")
+					#TODO
+		except Exception as e:
+			logger.error(f"Command parse error: {e}")
 
 def motion_control():
 	config = load_config()
@@ -64,6 +80,7 @@ def motion_control():
 	OFF_DELAY = config["off_delay"]
 	DEBOUNCE_TIME = config["debounce_time"]
 	DIAGNOSTIC = config["diagnostic"]
+	DEV = config["dev"]
 
 	if DIAGNOSTIC:
 		logger.info(f"Diagnostic state is active")
@@ -81,7 +98,7 @@ def motion_control():
 
 	# Initialize display controller (detects Wayland/X11)
 	# ----------------------------------------------------
-	display = DisplayController(diagnostic=DIAGNOSTIC)
+	display = DisplayController(diagnostic=DIAGNOSTIC, dev=DEV)
 
 	logger.info(f"Detected Display Server: {display.display_type}")
 	logger.info(f"Base Display Command: {display.base_command}")
@@ -93,9 +110,11 @@ def motion_control():
 		radar_device=radar,
 		off_delay=OFF_DELAY,
 		debounce=DEBOUNCE_TIME,
-		diagnostic=DIAGNOSTIC
+		diagnostic=DIAGNOSTIC,
+		dev=DEV
 	)
-
+	logger.info("Display state:")
+	logger.info(display.display_is_on)
 	# Startup behavior
 	# -----------------
 	if radar.is_active:
@@ -110,7 +129,10 @@ def motion_control():
 	logger.info("System Ready. Monitoring motion...")
 
 	# Start listener for commands from the node_helper
-	threading.Thread(target=listen_for_commands, daemon=True).start()
+	threading.Thread(
+		target=listen_for_commands,
+		args=(motion, display, radar),
+		daemon=True).start()
 
 	# Run until user exits
 	# --------------------

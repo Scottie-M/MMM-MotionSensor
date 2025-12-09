@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+	#!/usr/bin/env python3
 
 import re
 import subprocess
@@ -18,12 +18,14 @@ PREFERRED_ORDER = [
 
 
 class DisplayController:
-	def __init__(self, diagnostic: False):
+	def __init__(self, diagnostic: False, dev: False):
 		self.display_type = self.detect_display_server()
-		self.base_command = self.build_base_command(self.display_type)
-		self.display_is_on = False
-		self.lock = threading.Lock()
 		self.diagnostic = diagnostic
+		self.dev = dev
+		self.display_is_on = False
+		self.base_command = self.build_base_command(self.display_type)
+		self.lock = threading.Lock()
+		
 
 	# Send structured event JSON to stdout for node_helper to parse.
 	#---------------------------------------------------------------
@@ -143,12 +145,17 @@ class DisplayController:
 	#------------------------------------------------
 	def build_base_command(self, display_type):
 		# Wayland
+		logger.info(self.diagnostic)
 		if display_type == "wayland":
 			displays = self.get_wayland_displays()
 			if not displays:
 				logger.error("No Wayland displays found.")
-				sys.exit(11)
-
+				if self.diagnostic and self.dev:
+					# For testing when running headless
+					logger.info(f"Diagnostic mode, using dummy Wayland output HDMI")
+					return ["/usr/bin/wlr-randr", "--output", "HDMI"]
+				else:
+					sys.exit(11)
 			name = self.select_best_output(displays)
 			logger.info(f"Using Wayland output: {name}")
 
@@ -159,7 +166,12 @@ class DisplayController:
 			display_num = self.find_x11_display_number()
 			if not display_num:
 				logger.error("Failed to determine X11 display number.")
-				sys.exit(33)
+				if self.diagnostic and self.dev:
+					# For testing when running headless
+					logger.info(f"Diagnostic mode, using dummy X11 output 0:0 HDMI")
+					return ["/usr/bin/xrandr", "-display", "0:0", "--output", "HDMI"]
+				else:
+					sys.exit(33)
 
 			displays = self.get_x11_displays(display_num)
 			if not displays:
@@ -208,7 +220,7 @@ class DisplayController:
 
 
 class MotionHandler:
-	def __init__(self, display: DisplayController, radar_device, off_delay=15, debounce=2, diagnostic=False):
+	def __init__(self, display: DisplayController, radar_device, off_delay=15, debounce=2, diagnostic=False, dev=False):
 		self.display = display
 		self.radar = radar_device
 		self.off_delay = off_delay
@@ -217,6 +229,7 @@ class MotionHandler:
 		self.timer = None
 		self.lock = threading.Lock()
 		self.diagnostic = diagnostic
+		self.dev = dev
 
 		# Link handlers
 		self.radar.when_activated = self.motion_start
@@ -238,7 +251,7 @@ class MotionHandler:
 
 			self.display.set_display(True)
 
-	def motion_end(self):
+	def motion_end(self, no_delay=False):
 		logger.debug("Motion stopped")
 		if self.diagnostic:
 			msg = f"{time.strftime('%H:%M:%S')} - Motion Stopped"
@@ -247,7 +260,10 @@ class MotionHandler:
 		with self.lock:
 			if self.timer:
 				self.timer.cancel()
-			self.timer = threading.Timer(self.off_delay, self.display_off)
+			if no_delay:
+				self.timer = threading.Timer(0.1, self.display_off)
+			else:
+				self.timer = threading.Timer(self.off_delay, self.display_off)
 			self.timer.start()
 
 	def display_off(self):
