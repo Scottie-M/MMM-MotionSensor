@@ -66,7 +66,7 @@ Module.register("MMM-MotionSensor", {
 					this.sendNotification ("TV_STATUS", { status: payload.event});
 					this.updateDom();
 				}
-				if (payload.event.includes("Motion") && this.config.diagnostic){
+				if (payload.event.includes("Motion")){ //&& this.config.diagnostic){
 					this.motion = payload.event;
 					this.updateDom();
 				}
@@ -92,7 +92,7 @@ Module.register("MMM-MotionSensor", {
 		var wrapper = document.createElement("div");
 
 		var topLine = document.createElement("div");
-		if (this.config.diagnostic) {
+		if (!this.config.diagnostic) {
 			topLine.style.color = "white";
 		}
 
@@ -106,17 +106,19 @@ Module.register("MMM-MotionSensor", {
 		// Second line: tvStatus
 		if (this.config.hasOwnProperty("tvStatus")) {
 			var status = document.createElement("div");
-			if (this.config.diagnostic) {
+			if (!this.config.diagnostic) {
 				status.style.color = "white";
+				status.style.fontSize = "large"
 			}
 			status.innerHTML = this.config.tvStatus;
 			wrapper.appendChild(status);
 		}
 
 		// Bottom line: motion
-		if (this.config.diagnostic) {
+		if (!this.config.diagnostic) {
 			var status = document.createElement("div");
 			status.style.color = "white";
+			status.style.fontSize = "large"
 			status.innerHTML = this.motion;
 			wrapper.appendChild(status);
 		}

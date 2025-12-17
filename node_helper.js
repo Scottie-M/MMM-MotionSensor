@@ -68,7 +68,7 @@ module.exports = NodeHelper.create({
 						const msgObj = typeof message === "object"
 							? JSON.stringify(message, null, 2)
 							: message;
-						this.logger.debug("Socket Notification sent: " + msgObj);
+						//this.logger.debug("Socket Notification sent: " + msgObj);
 						return;
 					}
 				} catch (e) {

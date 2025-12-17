@@ -75,7 +75,6 @@ class DisplayController:
 		displays = []
 		try:
 			output = subprocess.check_output(['wlr-randr'], text=True)
-			current = None
 
 			for line in output.splitlines():
 				line = line.strip()
@@ -188,11 +187,10 @@ class DisplayController:
 				action_flag = "--auto" if on else "--off"
 
 			cmd = self.base_command + [action_flag]
-			if not self.diagnostic:
-				logger.debug(f"Running command: {cmd}")
 
 			try:
 				if not self.diagnostic:
+					logger.debug(f"Running command: {cmd}")
 					subprocess.run(cmd, check=True, capture_output=True, text=True)
 				else:
 					logger.debug(f"Diagnostic mode. NOT running command: {cmd}")
