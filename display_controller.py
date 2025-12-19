@@ -38,26 +38,47 @@ class DisplayController:
 	def detect_display_server(self):
 		try:
 			sessions_output = subprocess.check_output(
-				['loginctl', 'list-sessions', '--no-legend'], 
+				['loginctl', 'list-sessions', '--no-legend'],
 				text=True
 			)
 
-			session_id = None
+			gui_session_id = None
+
 			for line in sessions_output.strip().splitlines():
 				parts = line.split()
-				if len(parts) >= 4 and parts[3] == "seat0":
-					session_id = parts[0]
+
+				# Expected columns (variable length):
+				# 0 = SESSION
+				# 1 = UID
+				# 2 = USER
+				# 3 = SEAT (optional)
+				# 4 = TTY  (optional)
+				logger.debug(len(parts))
+				if len(parts) < 4:
+					continue
+
+				session_id = parts[0]
+				seat = parts[3]
+				tty = parts[4] if len(parts) >= 5 else None
+
+				# GUI session = seat0 AND no tty
+				if seat == "seat0" and tty is None:
+					gui_session_id = session_id
 					break
 
-			if not session_id:
+			if not gui_session_id:
+				logger.error("No GUI session found")
 				return "unknown"
 
 			type_output = subprocess.check_output(
-				['loginctl', 'show-session', session_id, '-p', 'Type'],
+				['loginctl', 'show-session', gui_session_id, '-p', 'Type'],
 				text=True
 			).strip()
 
-			return type_output.split("=")[1]
+			display_type = type_output.split("=", 1)[1]
+			logger.debug(f"Detected display server: {display_type}")
+			return display_type
+
 		except Exception as e:
 			logger.error(f"Failed detecting display server: {e}")
 			return "unknown"
