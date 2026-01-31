@@ -45,7 +45,6 @@ def load_config():
 	return config
 
 def listen_for_commands(motion, display, radar):
-	logger.info("In Listen for commands")
 	for line in sys.stdin:
 		try:
 			msg = json.loads(line.strip())
@@ -113,8 +112,7 @@ def motion_control():
 		diagnostic=DIAGNOSTIC,
 		dev=DEV
 	)
-	logger.info("Display state:")
-	logger.info(display.display_is_on)
+
 	# Startup behavior
 	# -----------------
 	if radar.is_active:
