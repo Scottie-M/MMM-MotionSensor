@@ -1,12 +1,15 @@
 Module.register("MMM-MotionSensor", {
 	config:null,
 	motion:"",
+	button:"",
 	defaults: {
 		message: "Nothing to see here.",
 		tvStatus: "TV State Unknown",
-		off_delay: 30 ,			//in Seconds
+		off_delay: 30 ,			// in Seconds
 		debounce_time: 2,
 		//displayName: "HDMI-1",
+		detection_mode: "radar", // radar / button /  both
+		button_pin: 17,
 		radar_pin: 4,
 		diagnostic: false,
 		debug: {level: "info"},
@@ -26,6 +29,7 @@ Module.register("MMM-MotionSensor", {
 						action: radarAction
 					}) + "\n"));
 	},
+
 	start(){
 		//this.logToHelper("info", this.name + " is starting!");
 		this.data.header = "Motion Sensor";
@@ -69,6 +73,12 @@ Module.register("MMM-MotionSensor", {
 			case "ENABLE_RADAR": // TODO - Not implimented yet
 				this.messageToRadar("command","ENABLE_RADAR");
 				break;
+			case "DISABLE_BUTTON": // TODO - Not implimented yet
+				this.messageToRadar("command","DISABLE_BUTTON");
+				break;
+			case "ENABLE_BUTTON": // TODO - Not implimented yet
+				this.messageToRadar("command","ENABLE_BUTTON");
+				break;
 			default:
 				//this.logToHelper("info", "Notification received: " + notification);
 			}
@@ -85,17 +95,23 @@ Module.register("MMM-MotionSensor", {
 				const payloadObj = typeof payload === "object"
                 	? JSON.stringify(payload, null, 2) : payload;
 				this.logToHelper("debug","Received a SOCKET notification: " + notification + " - Payload: " + payloadObj);
+
 				if (payload.event.includes("Display")){
 					this.config.tvStatus = payload.event;
 					this.sendNotification ("TV_STATUS", { status: payload.event});
 					this.updateDom();
 				}
+
 				if (payload.event.includes("Motion") && this.config.diagnostic){
 					this.motion = payload.event;
 					this.updateDom();
 				}
-
+				if (payload.event.includes("Button") && this.config.diagnostic){
+					this.button = payload.event;
+					this.updateDom();
+				}
 				break;
+
 			default:
 				this.logToHelper("info","Unknown Socket Notification Received: " + notification);
 		}
@@ -126,11 +142,19 @@ Module.register("MMM-MotionSensor", {
 			wrapper.appendChild(status);
 		}
 
-		// Bottom line: motion
+		// Motion line
 		if (this.config.diagnostic) {
 			var status = document.createElement("div");
 			status.style.color = "white";
 			status.innerHTML = this.motion;
+			wrapper.appendChild(status);
+		}
+		
+		// Button line
+		if (this.config.diagnostic) {
+			var status = document.createElement("div");
+			status.style.color = "white";
+			status.innerHTML = this.button;
 			wrapper.appendChild(status);
 		}
     	return wrapper;

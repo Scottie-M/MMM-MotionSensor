@@ -1,4 +1,4 @@
-	#!/usr/bin/env python3
+#!/usr/bin/env python3
 
 import re
 import subprocess
@@ -13,280 +13,300 @@ OUTPUT_REGEX = r"^(HDMI|DP|DVI|VGA|DSI|DPI|LVDS|TV|Composite|CVBS|eDP)[A-Za-z0-9
 
 # Best → worst display selection order
 PREFERRED_ORDER = [
-	"HDMI", "DP", "DSI", "eDP", "DPI", "LVDS", "TV", "Composite", "CVBS", "VGA", "DVI"
+    "HDMI", "DP", "DSI", "eDP", "DPI", "LVDS", "TV", "Composite", "CVBS", "VGA", "DVI"
 ]
 
 
 class DisplayController:
-	def __init__(self, diagnostic: False, dev: False):
-		self.display_type = self.detect_display_server()
-		self.diagnostic = diagnostic
-		self.dev = dev
-		self.display_is_on = False
-		self.base_command = self.build_base_command(self.display_type)
-		self.lock = threading.Lock()
-		
+    def __init__(self, diagnostic: False, dev: False):
+        self.display_type = self.detect_display_server()
+        self.diagnostic = diagnostic
+        self.dev = dev
+        self.display_is_on = False
+        self.base_command = self.build_base_command(self.display_type)
+        self.lock = threading.Lock()
+        
 
-	# Send structured event JSON to stdout for node_helper to parse.
-	#---------------------------------------------------------------
-	def emit_event(self, event_type, message):
-		payload = {"type": "event", "event": event_type, "message": message}
-		print(json.dumps(payload), flush=True)
+    # Send structured event JSON to stdout for node_helper to parse.
+    #---------------------------------------------------------------
+    def emit_event(self, event_type, message):
+        payload = {"type": "event", "event": event_type, "message": message}
+        print(json.dumps(payload), flush=True)
 
-	# Detect whether we are using Wayland or X11
-	#-------------------------------------------
-	def detect_display_server(self):
-		try:
-			sessions_output = subprocess.check_output(
-				['loginctl', 'list-sessions', '--no-legend'],
-				text=True
-			)
+    # Event types so far.... ->
+    # Display ON / OFF
+    # Motion Detected / Stopped
+    # Button Pressed
 
-			gui_session_id = None
 
-			for line in sessions_output.strip().splitlines():
-				parts = line.split()
+    # Detect whether we are using Wayland or X11
+    #-------------------------------------------
+    def detect_display_server(self):
+        try:
+            sessions_output = subprocess.check_output(
+                ['loginctl', 'list-sessions', '--no-legend'],
+                text=True
+            )
 
-				# Expected columns (variable length):
-				# 0 = SESSION
-				# 1 = UID
-				# 2 = USER
-				# 3 = SEAT (optional)
-				# 4 = TTY  (optional)
-				logger.debug(len(parts))
-				if len(parts) < 4:
-					continue
+            gui_session_id = None
 
-				session_id = parts[0]
-				seat = parts[3]
-				tty = parts[4] if len(parts) >= 5 else None
+            for line in sessions_output.strip().splitlines():
+                parts = line.split()
 
-				# GUI session = seat0 AND no tty
-				if seat == "seat0" and tty is None:
-					gui_session_id = session_id
-					break
+                # Expected columns (variable length):
+                # 0 = SESSION
+                # 1 = UID
+                # 2 = USER
+                # 3 = SEAT (optional)
+                # 4 = TTY  (optional)
+                logger.debug(len(parts))
+                if len(parts) < 4:
+                    continue
 
-			if not gui_session_id:
-				logger.error("No GUI session found")
-				return "unknown"
+                session_id = parts[0]
+                seat = parts[3]
+                tty = parts[4] if len(parts) >= 5 else None
 
-			type_output = subprocess.check_output(
-				['loginctl', 'show-session', gui_session_id, '-p', 'Type'],
-				text=True
-			).strip()
+                # GUI session = seat0 AND no tty
+                if seat == "seat0" and tty is None:
+                    gui_session_id = session_id
+                    break
 
-			display_type = type_output.split("=", 1)[1]
-			logger.debug(f"Detected display server: {display_type}")
-			return display_type
+            if not gui_session_id:
+                logger.error("No GUI session found")
+                return "unknown"
 
-		except Exception as e:
-			logger.error(f"Failed detecting display server: {e}")
-			return "unknown"
+            type_output = subprocess.check_output(
+                ['loginctl', 'show-session', gui_session_id, '-p', 'Type'],
+                text=True
+            ).strip()
 
-	# Select the "best" output based on ranking
-	#------------------------------------------
-	def select_best_output(self, displays):
-		for prefix in PREFERRED_ORDER:
-			for d in displays:
-				if d["name"].startswith(prefix):
-					return d["name"]
-		return displays[0]["name"]
+            display_type = type_output.split("=", 1)[1]
+            logger.debug(f"Detected display server: {display_type}")
+            return display_type
 
-	# Parse Wayland (wlroots) display names
-	#--------------------------------------
-	def get_wayland_displays(self):
-		displays = []
-		try:
-			output = subprocess.check_output(['wlr-randr'], text=True)
-			current = None
+        except Exception as e:
+            logger.error(f"Failed detecting display server: {e}")
+            return "unknown"
 
-			for line in output.splitlines():
-				line = line.strip()
+    # Select the "best" output based on ranking
+    #------------------------------------------
+    def select_best_output(self, displays):
+        for prefix in PREFERRED_ORDER:
+            for d in displays:
+                if d["name"].startswith(prefix):
+                    return d["name"]
+        return displays[0]["name"]
 
-				# Matches: HDMI-A-1 "Monitor Name"
-				m = re.match(r'^(\S+) "(.*)"$', line)
-				if m:
-					name = m.group(1)
+    # Parse Wayland (wlroots) display names
+    #--------------------------------------
+    def get_wayland_displays(self):
+        displays = []
+        try:
+            output = subprocess.check_output(['wlr-randr'], text=True)
+            current = None
 
-					# Skip NOOP or headless outputs
-					if name.startswith("NOOP") or name.startswith("HEADLESS"):
-						continue
+            for line in output.splitlines():
+                line = line.strip()
 
-					if re.match(OUTPUT_REGEX, name):
-						displays.append({"name": name})
-			return displays
+                # Matches: HDMI-A-1 "Monitor Name"
+                m = re.match(r'^(\S+) "(.*)"$', line)
+                if m:
+                    name = m.group(1)
 
-		except Exception as e:
-			logger.error(f"Wayland parsing error: {e}")
-			return []
+                    # Skip NOOP or headless outputs
+                    if name.startswith("NOOP") or name.startswith("HEADLESS"):
+                        continue
 
-	# Find X11 display number (:0, :0.0 etc)
-	#-----------------------------------
-	def find_x11_display_number(self):
-		try:
-			output = subprocess.check_output(["ps", "-eo", "cmd"], text=True)
-			for line in output.splitlines():
-				if "Xorg" in line:
-					m = re.search(r"\s(:[0-9.]+)", line)
-					if m:
-						return m.group(1)
-			return None
-		except Exception:
-			return None
+                    if re.match(OUTPUT_REGEX, name):
+                        displays.append({"name": name})
+            return displays
 
-	# Parse xrandr display names
-	#---------------------------
-	def get_x11_displays(self, display_number):
-		displays = []
-		try:
-			output = subprocess.check_output(
-				['xrandr', '-display', display_number, '--query'],
-				text=True
-			)
+        except Exception as e:
+            logger.error(f"Wayland parsing error: {e}")
+            return []
 
-			for line in output.splitlines():
-				if " connected" in line:
-					parts = line.split()
+    # Find X11 display number (:0, :0.0 etc)
+    #-----------------------------------
+    def find_x11_display_number(self):
+        try:
+            output = subprocess.check_output(["ps", "-eo", "cmd"], text=True)
+            for line in output.splitlines():
+                if "Xorg" in line:
+                    m = re.search(r"\s(:[0-9.]+)", line)
+                    if m:
+                        return m.group(1)
+            return None
+        except Exception:
+            return None
 
-					# Find first part matching any connector
-					match_name = next(
-						(p for p in parts if re.match(OUTPUT_REGEX, p)), None
-					)
+    # Parse xrandr display names
+    #---------------------------
+    def get_x11_displays(self, display_number):
+        displays = []
+        try:
+            output = subprocess.check_output(
+                ['xrandr', '-display', display_number, '--query'],
+                text=True
+            )
 
-					if match_name:
-						displays.append({"name": match_name})
+            for line in output.splitlines():
+                if " connected" in line:
+                    parts = line.split()
 
-			return displays
+                    # Find first part matching any connector
+                    match_name = next(
+                        (p for p in parts if re.match(OUTPUT_REGEX, p)), None
+                    )
 
-		except Exception as e:
-			logger.error(f"X11 parse error: {e}")
-			return []
+                    if match_name:
+                        displays.append({"name": match_name})
 
-	# Build immutable base command for Wayland or X11
-	#------------------------------------------------
-	def build_base_command(self, display_type):
-		# Wayland
-		logger.info(self.diagnostic)
-		if display_type == "wayland":
-			displays = self.get_wayland_displays()
-			if not displays:
-				logger.error("No Wayland displays found.")
-				if self.diagnostic and self.dev:
-					# For testing when running headless
-					logger.info(f"Diagnostic mode, using dummy Wayland output HDMI")
-					return ["/usr/bin/wlr-randr", "--output", "HDMI"]
-				else:
-					sys.exit(11)
-			name = self.select_best_output(displays)
-			logger.info(f"Using Wayland output: {name}")
+            return displays
 
-			return ["/usr/bin/wlr-randr", "--output", name]
+        except Exception as e:
+            logger.error(f"X11 parse error: {e}")
+            return []
 
-		# X11
-		if display_type == "x11":
-			display_num = self.find_x11_display_number()
-			if not display_num:
-				logger.error("Failed to determine X11 display number.")
-				if self.diagnostic and self.dev:
-					# For testing when running headless
-					logger.info(f"Diagnostic mode, using dummy X11 output 0:0 HDMI")
-					return ["/usr/bin/xrandr", "-display", "0:0", "--output", "HDMI"]
-				else:
-					sys.exit(33)
+    # Build immutable base command for Wayland or X11
+    #------------------------------------------------
+    def build_base_command(self, display_type):
+        # Wayland
+        logger.info(self.diagnostic)
+        if display_type == "wayland":
+            displays = self.get_wayland_displays()
+            if not displays:
+                logger.error("No Wayland displays found.")
+                if self.diagnostic and self.dev:
+                    # For testing when running headless
+                    logger.info(f"Diagnostic mode, using dummy Wayland output HDMI")
+                    return ["/usr/bin/wlr-randr", "--output", "HDMI"]
+                else:
+                    sys.exit(11)
+            name = self.select_best_output(displays)
+            logger.info(f"Using Wayland output: {name}")
 
-			displays = self.get_x11_displays(display_num)
-			if not displays:
-				logger.error("No X11 displays found.")
-				sys.exit(44)
+            return ["/usr/bin/wlr-randr", "--output", name]
 
-			name = self.select_best_output(displays)
-			logger.info(f"Using X11 output: {name}")
+        # X11
+        if display_type == "x11":
+            display_num = self.find_x11_display_number()
+            if not display_num:
+                logger.error("Failed to determine X11 display number.")
+                if self.diagnostic and self.dev:
+                    # For testing when running headless
+                    logger.info(f"Diagnostic mode, using dummy X11 output 0:0 HDMI")
+                    return ["/usr/bin/xrandr", "-display", "0:0", "--output", "HDMI"]
+                else:
+                    sys.exit(33)
 
-			return ["/usr/bin/xrandr", "-display", display_num, "--output", name]
+            displays = self.get_x11_displays(display_num)
+            if not displays:
+                logger.error("No X11 displays found.")
+                sys.exit(44)
 
-		logger.error("Unknown display server type.")
-		sys.exit(99)
+            name = self.select_best_output(displays)
+            logger.info(f"Using X11 output: {name}")
 
-	# Turn display on/off (thread-safe)
-	#----------------------------------
-	def set_display(self, on: bool):
-		with self.lock:
-			if self.display_is_on == on:
-				return
+            return ["/usr/bin/xrandr", "-display", display_num, "--output", name]
 
-			# Correct flags for each compositor:
-			if self.display_type == "wayland":
-				action_flag = "--on" if on else "--off"
-			else:  # X11
-				action_flag = "--auto" if on else "--off"
+        logger.error("Unknown display server type.")
+        sys.exit(99)
 
-			cmd = self.base_command + [action_flag]
-			if not self.diagnostic:
-				logger.debug(f"Running command: {cmd}")
+    # Turn display on/off (thread-safe)
+    #----------------------------------
+    def set_display(self, on: bool):
+        with self.lock:
+            if self.display_is_on == on:
+                return
 
-			try:
-				if not self.diagnostic:
-					subprocess.run(cmd, check=True, capture_output=True, text=True)
-				else:
-					logger.debug(f"Diagnostic mode. NOT running command: {cmd}")
+            # Correct flags for each compositor:
+            if self.display_type == "wayland":
+                action_flag = "--on" if on else "--off"
+            else:  # X11
+                action_flag = "--auto" if on else "--off"
 
-			except subprocess.CalledProcessError as e:
-				logger.error(f"Display command failed: {e.stderr.strip()}")
-				return
+            cmd = self.base_command + [action_flag]
+            if not self.diagnostic:
+                logger.debug(f"Running command: {cmd}")
 
-			self.display_is_on = on
-			msg = f"{time.strftime('%H:%M:%S')} - Motion {'detected' if on else 'stopped'} - turning display {'ON' if on else 'OFF'}"
-			self.emit_event(f"Display {'ON' if on else 'OFF'}", msg)
-			logger.info(f"Display {'ON' if on else 'OFF'}")
+            try:
+                if not self.diagnostic:
+                    subprocess.run(cmd, check=True, capture_output=True, text=True)
+                else:
+                    logger.debug(f"Diagnostic mode. NOT running command: {cmd}")
+
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Display command failed: {e.stderr.strip()}")
+                return
+
+            self.display_is_on = on
+            msg = f"{time.strftime('%H:%M:%S')} - Motion {'detected' if on else 'stopped'} - turning display {'ON' if on else 'OFF'}"
+            self.emit_event(f"Display {'ON' if on else 'OFF'}", msg)
+            logger.info(f"Display {'ON' if on else 'OFF'}")
 
 
 class MotionHandler:
-	def __init__(self, display: DisplayController, radar_device, off_delay=15, debounce=2, diagnostic=False, dev=False):
-		self.display = display
-		self.radar = radar_device
-		self.off_delay = off_delay
-		self.debounce = debounce
-		self.last_trigger = 0
-		self.timer = None
-		self.lock = threading.Lock()
-		self.diagnostic = diagnostic
-		self.dev = dev
+    def __init__(self, display: DisplayController, radar_device, off_delay=15, debounce=2, diagnostic=False, dev=False):
+        self.display = display
+        self.radar = radar_device
+        self.off_delay = off_delay
+        self.debounce = debounce
+        self.last_trigger = 0
+        self.timer = None
+        self.lock = threading.Lock()
+        self.diagnostic = diagnostic
+        self.dev = dev
 
-		# Link handlers
-		self.radar.when_activated = self.motion_start
-		self.radar.when_deactivated = self.motion_end
+        # Link handlers
+        self.radar.when_activated = self.motion_start
+        self.radar.when_deactivated = self.motion_end
 
-	def motion_start(self):
-		now = time.time()
-		if now - self.last_trigger < self.debounce:
-			return
-		self.last_trigger = now
 
-		with self.lock:
-			if self.timer:
-				self.timer.cancel()
-			logger.debug("Motion detected")
-			if self.diagnostic:
-				msg = f"{time.strftime('%H:%M:%S')} - Motion detected"
-				self.display.emit_event(f"Motion Detected", msg)
+    def motion_start(self):
+        now = time.time()
 
-			self.display.set_display(True)
+        with self.lock:
+            if now - self.last_trigger < self.debounce:
+                return
 
-	def motion_end(self, no_delay=False):
-		logger.debug("Motion stopped")
-		if self.diagnostic:
-			msg = f"{time.strftime('%H:%M:%S')} - Motion Stopped"
-			self.display.emit_event(f"Motion Stopped", msg)
+            self.last_trigger = now
 
-		with self.lock:
-			if self.timer:
-				self.timer.cancel()
-			if no_delay:
-				self.timer = threading.Timer(0.1, self.display_off)
-			else:
-				self.timer = threading.Timer(self.off_delay, self.display_off)
-			self.timer.start()
+            if self.timer:
+                self.timer.cancel()
+                self.timer = None
 
-	def display_off(self):
-		logger.debug("Auto turning OFF display")
-		self.display.set_display(False)
+        logger.debug("Motion detected")
+
+        if self.diagnostic:
+            msg = f"{time.strftime('%H:%M:%S')} - Motion detected"
+            self.display.emit_event(f"Motion Detected", msg)
+        self.display.set_display(True)
+
+
+    def motion_end(self, no_delay=False):
+        logger.debug("Motion stopped")
+
+        if self.diagnostic:
+            msg = f"{time.strftime('%H:%M:%S')} - Motion Stopped"
+            self.display.emit_event(f"Motion Stopped", msg)
+
+        with self.lock:
+            if self.timer:
+                self.timer.cancel()
+
+            # Make sure only one timer exists
+            delay = 0.1 if no_delay else self.off_delay
+            self.timer = threading.Timer(delay, self.display_off)
+            self.timer.start()
+
+            #if no_delay:
+            #   self.timer = threading.Timer(0.1, self.display_off)
+            #else:
+            #   self.timer = threading.Timer(self.off_delay, self.display_off)
+            #self.timer.start()
+
+    def display_off(self):
+        logger.debug("Auto turning OFF display")
+        self.display.set_display(False)
+

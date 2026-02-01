@@ -20,6 +20,7 @@ module.exports = NodeHelper.create({
 		this.pythonProcess = null; // track running process
 	},
 
+
 	start(){
 		this.logger.info('Starting node_helper.');
 	},
@@ -35,6 +36,8 @@ module.exports = NodeHelper.create({
 
 		const configPayload = {
 			off_delay: this.config.off_delay,
+			detection_mode: this.config.detection_mode,
+			button_pin: this.config.button_pin,
 			radar_pin: this.config.radar_pin,
 			debounce_time: this.config.debounce_time,
 			log_level: this.config.debug.level?.toLowerCase() || "info",
@@ -103,6 +106,7 @@ module.exports = NodeHelper.create({
 			this.pythonProcess = null;
 		}
 	},
+
 
 	socketNotificationReceived(notification, payload) {
 		switch (notification) {
