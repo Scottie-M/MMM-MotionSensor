@@ -68,7 +68,7 @@ module.exports = NodeHelper.create({
 				try {
 					const message = JSON.parse(line);
 					if (message.type === "event") {
-						this.sendSocketNotification("RADAR_EVENT", message);
+						this.sendSocketNotification("SENSOR_EVENT", message);
 						const msgObj = typeof message === "object"
 							? JSON.stringify(message, null, 2)
 							: message;

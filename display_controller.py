@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
++#!/usr/bin/env python3
 
 import re
 import subprocess
@@ -29,8 +29,8 @@ class DisplayController:
 
     # Send structured event JSON to stdout for node_helper to parse.
     #---------------------------------------------------------------
-    def emit_event(self, event_type, message):
-        payload = {"type": "event", "event": event_type, "message": message}
+    def emit_event(self, event, event_type, message):
+        payload = {"type": event, "event": event_type, "message": message}
         print(json.dumps(payload), flush=True)
 
     # Event types so far.... ->
@@ -242,7 +242,7 @@ class DisplayController:
 
             self.display_is_on = on
             msg = f"{time.strftime('%H:%M:%S')} - Motion {'detected' if on else 'stopped'} - turning display {'ON' if on else 'OFF'}"
-            self.emit_event(f"Display {'ON' if on else 'OFF'}", msg)
+            self.emit_event(f"event",f"Display {'ON' if on else 'OFF'}", msg)
             logger.info(f"Display {'ON' if on else 'OFF'}")
 
 
@@ -280,7 +280,7 @@ class MotionHandler:
 
         if self.diagnostic:
             msg = f"{time.strftime('%H:%M:%S')} - Motion detected"
-            self.display.emit_event(f"Motion Detected", msg)
+            self.display.emit_event(f"event", f"Motion Detected", msg)
         self.display.set_display(True)
 
 
@@ -289,7 +289,7 @@ class MotionHandler:
 
         if self.diagnostic:
             msg = f"{time.strftime('%H:%M:%S')} - Motion Stopped"
-            self.display.emit_event(f"Motion Stopped", msg)
+            self.display.emit_event(f"event," f"Motion Stopped", msg)
 
         with self.lock:
             if self.timer:

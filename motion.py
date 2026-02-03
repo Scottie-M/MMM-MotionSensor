@@ -88,6 +88,12 @@ def listen_for_commands(motion, display, radar):
                 elif action == "ENABLE_RADAR":
                     logger.info("TODO Received command from Node: ENABLE_RADAR")
                     #TODO
+                elif action == "DISABLE_BUTTON":
+                    logger.info("TODO Received command from Node: DISABLE_BUTTION")
+                    #TODO
+                elif action == "ENABLE_BUTTON":
+                    logger.info("TODO Received command from Node: ENABLE_BUTTON")
+                    #TODO
         except Exception as e:
             logger.error(f"Command parse error: {e}")
 
@@ -164,6 +170,9 @@ def button_control(config, display, motion):
         )
     except Exception as e:
         logger.error(f"Failed to initialize button on GPIO {BUTTON_PIN}: {e}")
+        msg = f"{time.strftime('%H:%M:%S')} - Failed to initialize button on GPIO {BUTTON_PIN}"
+            display.emit_event(f"error", f"Button Initialisation Error", msg)
+
         return
 
     def handle_press():
@@ -171,7 +180,7 @@ def button_control(config, display, motion):
 
         if DIAGNOSTIC:
             msg = f"{time.strftime('%H:%M:%S')} - Button pressed"
-            display.emit_event("Button Pressed", msg)
+            display.emit_event(f"event", f"Button Pressed", msg)
 
         # Toggle display
         if motion:

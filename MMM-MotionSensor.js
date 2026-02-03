@@ -91,7 +91,7 @@ Module.register("MMM-MotionSensor", {
 				this.config.message = payload;
 				this.updateDom();
 				break;
-			case "RADAR_EVENT":
+			case "SENSOR_EVENT":
 				const payloadObj = typeof payload === "object"
                 	? JSON.stringify(payload, null, 2) : payload;
 				this.logToHelper("debug","Received a SOCKET notification: " + notification + " - Payload: " + payloadObj);
