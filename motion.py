@@ -15,8 +15,8 @@ DEFAULT_CONFIG = {
     "off_delay": 5,
     "debounce_time": 2,
     "log_level": "debug",
-    "diagnostic": False,
-    "dev" : False
+    "diagnostic": True,
+    "dev" : True
 }
 
 
@@ -171,7 +171,7 @@ def button_control(config, display, motion):
     except Exception as e:
         logger.error(f"Failed to initialize button on GPIO {BUTTON_PIN}: {e}")
         msg = f"{time.strftime('%H:%M:%S')} - Failed to initialize button on GPIO {BUTTON_PIN}"
-            display.emit_event(f"error", f"Button Initialisation Error", msg)
+        display.emit_event(f"error", f"Button Initialisation Error", msg)
 
         return
 
@@ -203,6 +203,8 @@ def button_control(config, display, motion):
 
     logger.info(f"Button control active on GPIO {BUTTON_PIN}")
 
+    return button
+  
 
 def run():
     config = load_config()
@@ -228,8 +230,10 @@ def run():
     if DETECTION_MODE in ("motion", "both") and RADAR_PIN is not None:
         motion, radar = start_motion_handler(config, display)
 
+    button = None
+
     if DETECTION_MODE in ("button", "both") and BUTTON_PIN is not None:
-        button_control(config, display, motion)
+        button = button_control(config, display, motion)
 
     logger.info(
         f"Detection mode: {DETECTION_MODE} | "
