@@ -1,6 +1,6 @@
 # MMM-MotionSensor
 
-### This is a module for Magic Mirror that uses the RCWL-0516 Microwave Radar Motion Sensor to turn the connected display on and off when a person approaches. 
+### This is a module for Magic Mirror that either uses the RCWL-0516 Microwave Radar Motion Sensor to turn the connected display on and off when a person approaches, or a non latching switch / button.
 
 I realised after building and testing my mirror that the PIR I was using wasn't going to work behind the acrylic so this was my solution.
 
@@ -9,6 +9,8 @@ The RCWL-0516 has a detection range of around 7 meters by default, which makes i
 This will need some soldering skill! I used an smd 500k trimmer pot, soldering one leg onto one of the SMD pads and a small jumper wire to attach the other. Setting the resistance just below half way seemed to work well and reduced the detection distance to a under 2 meters. I tried a few values of fixed resistors first but the ability to make small adjustments with a trimmer pot once the RCWL-0516 is in place is useful.
 
 If this seems daunting then a PIR mounted externally and one of the many PIR modules may be a better option. if not... details below!
+
+There is also an option of connecting a switch to a GPIO pin and using that to toggle the display, or have both that and the RCWL-0516 enabled
 
 
 **To install:**
@@ -26,8 +28,10 @@ This is a sample config for the module:
   header: "Motion Sensor",
   position: "bottom_left",
   config: {
+    detection_mode: "motion"  // "motion" / "button" / "both"
     off_delay: 30 ,			// in seconds
     debounce_time: 2, 		// in seconds
+    button_pin: 17,      // GPIO pin used for the button
     radar_pin: 4,				// GPIO pin used for the sensor
     debug: {level: "info"},
     diagnostic: false
@@ -43,8 +47,10 @@ Having `position` set is useful for the initial set up but should be removed aft
 
 | Option           | Description |
 |------------------|----------------|
+| `detection_mode`| Use rhe RCWL-0516, a push button or both for turing the display on and off<br>Default: `motion`<br>Options are: `"motion", "button" "both"`|
 | `off_delay`| The time in seconds that the display will remain on once motion at the mirror has stopped<br>Default: `30`|
 | `debounce_time`| To prevent repeated triggers, 2 seconds is about right!<br>Default: `2`  |
+| `button_pin`| This is the GPIO pin that the push button is connected to<br>Default: `17` | 
 | `radar_pin`| This is the GPIO pin that `out` on the RCWL-0516 is connected to<br>Default: `4` | 
 | `debug`| The level of log information sent to the console and log file.<br>Default: `"info"`<br>This needs to be in the format `{level:"LOG LEVEL"}`<br>Log levels can be: `"debug", "info" "warning", "error", "critical"`|
 | `diagnostic`| This is a diagnostic mode that keeps the display turned on. A message is displayed when motion is detected and when it stops.<br>This is useful for setting up the RCWL-0516 and adjusting the trimmer to set the detection distance.<br>Default: `false`|
@@ -91,6 +97,6 @@ I soldered a 90 degree header on this and used Dupont jumper wires to connect to
 
 
 <img width="800"  alt="ScreenShot 1" src="https://github.com/user-attachments/assets/042b5c77-8ea0-49d8-bdd3-6d7e31ca1b57" />
-
-
-
+<br><br>
+Connecting the button is simple, it connects accross the GPIO pin a ground pin, there is an internal pull up resistor so no other components are required.
+<br>
